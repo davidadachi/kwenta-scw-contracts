@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.17;
+pragma solidity 0.8.20;
 
-import {UserOperation} from "src/interfaces/UserOperation.sol";
+import {UserOperation} from "src/biconomy/interfaces/UserOperation.sol";
 
 // interface for modules to verify singatures signed over userOpHash
 interface IAuthorizationModule {
