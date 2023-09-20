@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-pragma solidity 0.8.18;
+pragma solidity 0.8.17;
 
 import {BaseGoerliParameters} from
     "script/utils/parameters/BaseGoerliParameters.sol";
@@ -9,14 +9,15 @@ import {OptimismGoerliParameters} from
 import {OptimismParameters} from
     "script/utils/parameters/OptimismParameters.sol";
 import {Script} from "lib/forge-std/src/Script.sol";
-import {Counter} from "src/Counter.sol";
+import {SMv2SessionValidationModule} from "src/SMv2SessionValidationModule.sol";
 
 /// @title Kwenta deployment script
 /// @author JaredBorders (jaredborders@pm.me)
 contract Setup is Script {
     function deploySystem() public returns (address) {
-        Counter counter = new Counter();
-        return address(counter);
+        SMv2SessionValidationModule sessionValidationModule =
+            new SMv2SessionValidationModule();
+        return address(sessionValidationModule);
     }
 }
 
