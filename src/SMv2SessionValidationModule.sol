@@ -83,9 +83,11 @@ contract SMv2SessionValidationModule is ISessionValidationModule {
                 _op.callData[4:], // skip selector
                 (address, uint256, bytes)
             );
+
             if (tokenAddr != token) {
                 revert("ERC20SV Wrong Token");
             }
+            
             if (callValue != 0) {
                 revert("ERC20SV Non Zero Value");
             }
@@ -100,12 +102,17 @@ contract SMv2SessionValidationModule is ISessionValidationModule {
             //we expect data to be the `IERC20.transfer(address, uint256)` calldata
             data = _op.callData[4 + offset + 32:4 + offset + 32 + length];
         }
+
         if (address(bytes20(data[16:36])) != recipient) {
             revert("ERC20SV Wrong Recipient");
         }
+
         if (uint256(bytes32(data[36:68])) > maxAmount) {
             revert("ERC20SV Max Amount Exceeded");
         }
+
+        /// @dev this method of signature validation is out-of-date and should be replaced
+        /// see https://github.com/OpenZeppelin/openzeppelin-sdk/blob/7d96de7248ae2e7e81a743513ccc617a2e6bba21/packages/lib/contracts/cryptography/ECDSA.sol#L6
         return ECDSA.recover(
             ECDSA.toEthSignedMessageHash(_userOpHash), _sessionKeySignature
         ) == sessionKey;
