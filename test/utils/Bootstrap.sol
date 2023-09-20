@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-pragma solidity 0.8.18;
+pragma solidity 0.8.17;
 
 import {console2} from "lib/forge-std/src/console2.sol";
 import {
-    Counter,
+    SMv2SessionValidationModule,
     OptimismGoerliParameters,
     OptimismParameters,
     Setup
@@ -13,38 +13,24 @@ import {Test} from "lib/forge-std/src/Test.sol";
 contract Bootstrap is Test {
     using console2 for *;
 
-    Counter public counter;
+    SMv2SessionValidationModule public sessionValidationModule;
 
     function initializeOptimismGoerli() public {
         BootstrapOptimismGoerli bootstrap = new BootstrapOptimismGoerli();
-        (address counterAddress) = bootstrap.init();
+        (address sessionValidationModuleAddress) = bootstrap.init();
 
-        counter = Counter(counterAddress);
-    }
-
-    function initializeOptimism() public {
-        BootstrapOptimismGoerli bootstrap = new BootstrapOptimismGoerli();
-        (address counterAddress) = bootstrap.init();
-
-        counter = Counter(counterAddress);
+        sessionValidationModule =
+            SMv2SessionValidationModule(sessionValidationModuleAddress);
     }
 
     /// @dev add other networks here as needed (ex: Base, BaseGoerli)
 }
 
-contract BootstrapOptimism is Setup, OptimismParameters {
-    function init() public returns (address) {
-        address counterAddress = Setup.deploySystem();
-
-        return counterAddress;
-    }
-}
-
 contract BootstrapOptimismGoerli is Setup, OptimismGoerliParameters {
     function init() public returns (address) {
-        address counterAddress = Setup.deploySystem();
+        address sessionValidationModuleAddress = Setup.deploySystem();
 
-        return counterAddress;
+        return sessionValidationModuleAddress;
     }
 }
 
