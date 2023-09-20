@@ -87,7 +87,7 @@ contract SMv2SessionValidationModule is ISessionValidationModule {
             if (tokenAddr != token) {
                 revert("ERC20SV Wrong Token");
             }
-            
+
             if (callValue != 0) {
                 revert("ERC20SV Non Zero Value");
             }
