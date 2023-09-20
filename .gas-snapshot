@@ -1,0 +1,2 @@
+Increment:testIncrement() (gas: 28287)
+SetNumber:testSetNumber(uint256) (runs: 256, μ: 27256, ~: 28345)
