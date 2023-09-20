@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.17;
+pragma solidity 0.8.20;
 
 /* solhint-disable no-empty-blocks */
 
-import {IAuthorizationModule} from "src/interfaces/IAuthorizationModule.sol";
-import {ISignatureValidator} from "src/interfaces/ISignatureValidator.sol";
+import {IAuthorizationModule} from
+    "src/biconomy/interfaces/IAuthorizationModule.sol";
+import {ISignatureValidator} from
+    "src/biconomy/interfaces/ISignatureValidator.sol";
 
 contract AuthorizationModulesConstants {
     uint256 internal constant VALIDATION_SUCCESS = 0;

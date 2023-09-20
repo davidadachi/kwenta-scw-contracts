@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.17;
+pragma solidity 0.8.20;
 
-import "src/BaseAuthorizationModule.sol";
-import {UserOperation} from "src/interfaces/UserOperation.sol";
+import "src/biconomy/BaseAuthorizationModule.sol";
+import {UserOperation} from "src/biconomy/interfaces/UserOperation.sol";
 
 abstract contract ISessionValidationModule {
     // execute(address,uint256,bytes)

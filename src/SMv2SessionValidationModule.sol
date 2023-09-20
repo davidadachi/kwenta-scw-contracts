@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.17;
+pragma solidity 0.8.20;
 
 import {
     ISessionValidationModule,
     UserOperation
-} from "src/interfaces/ISessionValidationModule.sol";
-// import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+} from "src/biconomy/interfaces/ISessionValidationModule.sol";
+import {ECDSA} from "src/openzeppelin/ECDSA.sol";
 
 /**
  * @title Kwenta Smart Margin v2 Session Validation Module for Biconomy Smart Accounts.
@@ -106,11 +106,8 @@ contract SMv2SessionValidationModule is ISessionValidationModule {
         if (uint256(bytes32(data[36:68])) > maxAmount) {
             revert("ERC20SV Max Amount Exceeded");
         }
-        return
-        // ECDSA.recover(
-        //     ECDSA.toEthSignedMessageHash(_userOpHash),
-        //     _sessionKeySignature
-        // ) == sessionKey;
-        true;
+        return ECDSA.recover(
+            ECDSA.toEthSignedMessageHash(_userOpHash), _sessionKeySignature
+        ) == sessionKey;
     }
 }
