@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.20;
+pragma solidity 0.8.18;
 
+import {IAccount} from "lib/smart-margin/src/interfaces/IAccount.sol";
 import {
     ISessionValidationModule,
     UserOperation
@@ -15,6 +16,11 @@ import {ECDSA} from "src/openzeppelin/ECDSA.sol";
  */
 
 contract SMv2SessionValidationModule is ISessionValidationModule {
+    error InvalidSelector(bytes4 selector);
+    error InvalidSMv2ExecuteSelector(bytes4 selector);
+    error InvalidDestinationContract(address addr);
+    error InvalidCallValue();
+
     /**
      * @dev validates that the call (destinationContract, callValue, funcCallData)
      * complies with the Session Key permissions represented by sessionKeyData
@@ -32,19 +38,32 @@ contract SMv2SessionValidationModule is ISessionValidationModule {
     ) external virtual override returns (address) {
         (
             address sessionKey,
-            address token,
-            address recipient,
-            uint256 maxAmount
-        ) = abi.decode(_sessionKeyData, (address, address, address, uint256));
+            address smv2ProxyAccount,
+            bytes4 smv2ExecuteSelector
+        ) = abi.decode(_sessionKeyData, (address, address, bytes4));
 
-        require(destinationContract == token, "ERC20SV Invalid Token");
-        require(callValue == 0, "ERC20SV Non Zero Value");
+        /// @dev ensure destinationContract is the SMv2ProxyAccount
+        if (destinationContract != smv2ProxyAccount) {
+            revert InvalidDestinationContract(smv2ProxyAccount);
+        }
 
-        (address recipientCalled, uint256 amount) =
-            abi.decode(_funcCallData[4:], (address, uint256));
+        /// @dev ensure the function selector is the `SmartAccount.execute` selector
+        if (bytes4(_funcCallData[:4]) != smv2ExecuteSelector) {
+            revert InvalidSMv2ExecuteSelector(smv2ExecuteSelector);
+        }
 
-        require(recipient == recipientCalled, "ERC20SV Wrong Recipient");
-        require(amount <= maxAmount, "ERC20SV Max Amount Exceeded");
+        /// @dev ensure call value is zero
+        if (callValue != 0) {
+            revert InvalidCallValue();
+        }
+
+        // (IAccount.Command[] memory _commands, bytes[] memory _inputs) = abi.decode(
+        //     _funcCallData[4:],
+        //     (IAccount.Command[], bytes[])
+        // );
+
+        /// @custom:add-param-validation-here-if-needed
+
         return sessionKey;
     }
 
@@ -64,54 +83,56 @@ contract SMv2SessionValidationModule is ISessionValidationModule {
         bytes calldata _sessionKeyData,
         bytes calldata _sessionKeySignature
     ) external pure override returns (bool) {
-        require(
-            bytes4(_op.callData[0:4]) == EXECUTE_OPTIMIZED_SELECTOR
-                || bytes4(_op.callData[0:4]) == EXECUTE_SELECTOR,
-            "ERC20SV Invalid Selector"
-        );
+        /// @dev ensure function selector is `IAccount.execute`
+        if (
+            bytes4(_op.callData[0:4]) != EXECUTE_SELECTOR
+                || bytes4(_op.callData[0:4]) != EXECUTE_OPTIMIZED_SELECTOR
+        ) {
+            revert InvalidSelector(bytes4(_op.callData[0:4]));
+        }
 
         (
             address sessionKey,
-            address token,
-            address recipient,
-            uint256 maxAmount
-        ) = abi.decode(_sessionKeyData, (address, address, address, uint256));
+            address smv2ProxyAccount,
+            bytes4 smv2ExecuteSelector
+        ) = abi.decode(_sessionKeyData, (address, address, bytes4));
 
         {
             // we expect _op.callData to be `SmartAccount.execute(to, value, calldata)` calldata
-            (address tokenAddr, uint256 callValue,) = abi.decode(
+            (address smv2ProxyAccountAddress, uint256 callValue,) =
+            abi.decode(
                 _op.callData[4:], // skip selector
                 (address, uint256, bytes)
             );
 
-            if (tokenAddr != token) {
-                revert("ERC20SV Wrong Token");
+            /// @dev ensure destinationContract is the SMv2ProxyAccount
+            if (smv2ProxyAccountAddress != smv2ProxyAccount) {
+                revert InvalidDestinationContract(smv2ProxyAccountAddress);
             }
 
+            /// @dev ensure call value is zero
             if (callValue != 0) {
-                revert("ERC20SV Non Zero Value");
+                revert InvalidCallValue();
             }
         }
+
         // working with userOp.callData
-        // check if the call is to the allowed recepient and amount is not more than allowed
+        // check if the call is conforms to `IAccount.execute`
         bytes calldata data;
         {
             uint256 offset = uint256(bytes32(_op.callData[4 + 64:4 + 96]));
             uint256 length =
                 uint256(bytes32(_op.callData[4 + offset:4 + offset + 32]));
-            //we expect data to be the `IERC20.transfer(address, uint256)` calldata
+            // we expect data to be the `IAccount.execute(Command[] _commands, bytes[] _inputs)` calldata
             data = _op.callData[4 + offset + 32:4 + offset + 32 + length];
         }
 
-        if (address(bytes20(data[16:36])) != recipient) {
-            revert("ERC20SV Wrong Recipient");
+        /// @dev ensure the function selector is the smv2ExecuteSelector selector
+        if (bytes4(data[:4]) != smv2ExecuteSelector) {
+            revert InvalidSMv2ExecuteSelector(smv2ExecuteSelector);
         }
 
-        if (uint256(bytes32(data[36:68])) > maxAmount) {
-            revert("ERC20SV Max Amount Exceeded");
-        }
-
-        /// @dev this method of signature validation is out-of-date and should be replaced
+        /// @dev this method of signature validation is out-of-date
         /// see https://github.com/OpenZeppelin/openzeppelin-sdk/blob/7d96de7248ae2e7e81a743513ccc617a2e6bba21/packages/lib/contracts/cryptography/ECDSA.sol#L6
         return ECDSA.recover(
             ECDSA.toEthSignedMessageHash(_userOpHash), _sessionKeySignature
