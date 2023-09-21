@@ -99,8 +99,7 @@ contract SMv2SessionValidationModule is ISessionValidationModule {
 
         {
             // we expect _op.callData to be `SmartAccount.execute(to, value, calldata)` calldata
-            (address smv2ProxyAccountAddress, uint256 callValue,) =
-            abi.decode(
+            (address smv2ProxyAccountAddress, uint256 callValue,) = abi.decode(
                 _op.callData[4:], // skip selector
                 (address, uint256, bytes)
             );
