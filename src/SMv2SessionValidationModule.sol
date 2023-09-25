@@ -1,7 +1,7 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.18;
 
-import {IAccount} from "lib/smart-margin/src/interfaces/IAccount.sol";
+import {IAccount} from "src/kwenta/smv2/IAccount.sol";
 import {
     ISessionValidationModule,
     UserOperation
@@ -14,7 +14,6 @@ import {ECDSA} from "src/openzeppelin/ECDSA.sol";
  * @author Fil Makarov - <filipp.makarov@biconomy.io>
  * @author JaredBorders (jaredborders@pm.me)
  */
-
 contract SMv2SessionValidationModule is ISessionValidationModule {
     error InvalidSelector(bytes4 selector);
     error InvalidSMv2ExecuteSelector(bytes4 selector);
