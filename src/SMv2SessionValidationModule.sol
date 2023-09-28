@@ -15,9 +15,9 @@ import {ECDSA} from "src/openzeppelin/ECDSA.sol";
  * @author JaredBorders (jaredborders@pm.me)
  */
 contract SMv2SessionValidationModule is ISessionValidationModule {
-    error InvalidSelector(bytes4 selector);
-    error InvalidSMv2ExecuteSelector(bytes4 selector);
-    error InvalidDestinationContract(address addr);
+    error InvalidSelector();
+    error InvalidSMv2Selector();
+    error InvalidDestinationContract();
     error InvalidCallValue();
 
     /**
@@ -43,12 +43,12 @@ contract SMv2SessionValidationModule is ISessionValidationModule {
 
         /// @dev ensure destinationContract is the SMv2ProxyAccount
         if (destinationContract != smv2ProxyAccount) {
-            revert InvalidDestinationContract(smv2ProxyAccount);
+            revert InvalidDestinationContract();
         }
 
         /// @dev ensure the function selector is the `SmartAccount.execute` selector
         if (bytes4(_funcCallData[:4]) != smv2ExecuteSelector) {
-            revert InvalidSMv2ExecuteSelector(smv2ExecuteSelector);
+            revert InvalidSMv2Selector();
         }
 
         /// @dev ensure call value is zero
@@ -87,7 +87,7 @@ contract SMv2SessionValidationModule is ISessionValidationModule {
             bytes4(_op.callData[0:4]) != EXECUTE_SELECTOR
                 || bytes4(_op.callData[0:4]) != EXECUTE_OPTIMIZED_SELECTOR
         ) {
-            revert InvalidSelector(bytes4(_op.callData[0:4]));
+            revert InvalidSelector();
         }
 
         (
@@ -105,7 +105,7 @@ contract SMv2SessionValidationModule is ISessionValidationModule {
 
             /// @dev ensure destinationContract is the SMv2ProxyAccount
             if (smv2ProxyAccountAddress != smv2ProxyAccount) {
-                revert InvalidDestinationContract(smv2ProxyAccountAddress);
+                revert InvalidDestinationContract();
             }
 
             /// @dev ensure call value is zero
@@ -127,7 +127,7 @@ contract SMv2SessionValidationModule is ISessionValidationModule {
 
         /// @dev ensure the function selector is the smv2ExecuteSelector selector
         if (bytes4(data[:4]) != smv2ExecuteSelector) {
-            revert InvalidSMv2ExecuteSelector(smv2ExecuteSelector);
+            revert InvalidSMv2Selector();
         }
 
         /// @dev this method of signature validation is out-of-date
