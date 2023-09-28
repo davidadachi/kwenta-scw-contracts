@@ -10,14 +10,20 @@ import {OptimismParameters} from
     "script/utils/parameters/OptimismParameters.sol";
 import {Script} from "lib/forge-std/src/Script.sol";
 import {SMv2SessionValidationModule} from "src/SMv2SessionValidationModule.sol";
+import {SMv3SessionValidationModule} from "src/SMv3SessionValidationModule.sol";
 
 /// @title Kwenta deployment script
 /// @author JaredBorders (jaredborders@pm.me)
 contract Setup is Script {
-    function deploySystem() public returns (address) {
-        SMv2SessionValidationModule sessionValidationModule =
+    function deploySystem() public returns (address, address) {
+        SMv2SessionValidationModule smv2SessionValidationModule =
             new SMv2SessionValidationModule();
-        return address(sessionValidationModule);
+        SMv3SessionValidationModule smv3SessionValidationModule =
+            new SMv3SessionValidationModule();
+        return (
+            address(smv2SessionValidationModule),
+            address(smv3SessionValidationModule)
+        );
     }
 }
 
