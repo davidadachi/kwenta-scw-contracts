@@ -56,7 +56,7 @@ contract SMv3SessionValidationModule is ISessionValidationModule {
         }
 
         /// @dev ensure the function selector is the a valid selector
-        bytes4 funcSelector = bytes4(_funcCallData[:4]);
+        bytes4 funcSelector = bytes4(_funcCallData[0:4]);
         if (
             funcSelector != smv3ModifyCollateralSelector
                 && funcSelector != smv3CommitOrderSelector
@@ -143,7 +143,7 @@ contract SMv3SessionValidationModule is ISessionValidationModule {
             );
 
             /// @dev ensure the function selector is the a valid selector
-            bytes4 funcSelector = bytes4(data[:4]);
+            bytes4 funcSelector = bytes4(data[0:4]);
             if (
                 funcSelector != smv3ModifyCollateralSelector
                     && funcSelector != smv3CommitOrderSelector
