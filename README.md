@@ -1,26 +1,19 @@
-# foundry-scaffold
+# scw-contracts
 
 [![Github Actions][gha-badge]][gha] 
 [![Foundry][foundry-badge]][foundry] 
 [![License: GPL-3.0][license-badge]][license]
 
-[gha]: https://github.com/Kwenta/foundry-scaffold/actions
-[gha-badge]: https://github.com/Kwenta/foundry-scaffold/actions/workflows/test.yml/badge.svg
+[gha]: https://github.com/Kwenta/scw-contracts/actions
+[gha-badge]: https://github.com/Kwenta/scw-contracts/actions/workflows/test.yml/badge.svg
 [foundry]: https://getfoundry.sh/
 [foundry-badge]: https://img.shields.io/badge/Built%20with-Foundry-FFDB1C.svg
 [license]: https://opensource.org/license/GPL-3.0/
 [license-badge]: https://img.shields.io/badge/GitHub-GPL--3.0-informational
 
-Template foundry project created by Kwenta
+## Overview
 
-## Getting Started
-
-1. Create an `.env` file using the `.env.example` file as a template
-2. Update `package.json` with your project name, description, etc.
-3. Update the `README.md` with your project name, description, etc.
-4. Add required **Repository Secrets** to your github repository settings
-> Navigate to `Settings > Secrets and variables > Actions` and add whatever secrets are required for your project's CI.
-5. The current template CI will fail until the following repository secrets are added: `OPTIMISM_GOERLI_RPC_URL` and `ETHERSCAN_API_KEY`. See `.github/workflows/*` for more details.
+scw-contracts is a collection of modified [Biconomy](https://github.com/bcnmy/scw-contracts) contracts used by Kwenta. Specifically, Kwenta required a modified version of the [Session Validation Module](https://github.com/bcnmy/scw-contracts/tree/master/contracts/smart-account/modules/SessionValidationModules) to support [Account Abstraction](https://www.biconomy.io). The Session Validation Module is used to validate the details of a [User Operation](https://github.com/bcnmy/account-abstraction/blob/develop/contracts/interfaces/UserOperation.sol) that defines an interaction between an actor and Kwenta's [Smart Margin v2](https://github.com/Kwenta/smart-margin) or [Smart Margin v3](https://github.com/Kwenta/smart-margin-v3) system.
 
 ## Contracts
 
@@ -28,7 +21,23 @@ Template foundry project created by Kwenta
 
 ```
 src/
-└── Counter.sol
+├── SMv2SessionValidationModule.sol
+├── SMv3SessionValidationModule.sol
+├── biconomy
+│   ├── BaseAuthorizationModule.sol
+│   └── interfaces
+│       ├── IAuthorizationModule.sol
+│       ├── ISessionValidationModule.sol
+│       ├── ISignatureValidator.sol
+│       └── UserOperation.sol
+├── kwenta
+│   ├── smv2
+│   │   └── IAccount.sol
+│   └── smv3
+│       ├── IERC7412.sol
+│       └── IEngine.sol
+└── openzeppelin
+    └── ECDSA.sol
 ```
 
 ## Tests
