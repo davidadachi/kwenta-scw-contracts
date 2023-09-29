@@ -198,6 +198,22 @@ contract ValidateSessionUserOp is SMv2SessionValidationModuleTest {
         );
 
         assertTrue(isValid);
+
+        op.callData = abi.encodeWithSelector(
+            EXECUTE_OPTIMIZED_SELECTOR,
+            destinationContract,
+            callValue,
+            funcCallData
+        );
+        userOpHash = userOpSignature.hashUserOperation(op);
+        sessionKeySignature =
+            userOpSignature.getUserOperationSignature(op, signerPrivateKey);
+
+        isValid = smv2SessionValidationModule.validateSessionUserOp(
+            op, userOpHash, sessionKeyData, sessionKeySignature
+        );
+
+        assertTrue(isValid);
     }
 
     function test_validateSessionUserOp_op_callData_invalid() public {
