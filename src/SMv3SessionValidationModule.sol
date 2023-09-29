@@ -59,9 +59,9 @@ contract SMv3SessionValidationModule is ISessionValidationModule {
         bytes4 funcSelector = bytes4(_funcCallData[:4]);
         if (
             funcSelector != smv3ModifyCollateralSelector
-                || funcSelector != smv3CommitOrderSelector
-                || funcSelector != smv3InvalidateUnorderedNoncesSelector
-                || funcSelector != smv3FulfillOracleQuerySelector
+                && funcSelector != smv3CommitOrderSelector
+                && funcSelector != smv3InvalidateUnorderedNoncesSelector
+                && funcSelector != smv3FulfillOracleQuerySelector
         ) {
             revert InvalidSMv3Selector();
         }
@@ -93,7 +93,7 @@ contract SMv3SessionValidationModule is ISessionValidationModule {
         /// @dev ensure function selector is `IAccount.execute`
         if (
             bytes4(_op.callData[0:4]) != EXECUTE_SELECTOR
-                || bytes4(_op.callData[0:4]) != EXECUTE_OPTIMIZED_SELECTOR
+                && bytes4(_op.callData[0:4]) != EXECUTE_OPTIMIZED_SELECTOR
         ) {
             revert InvalidSelector();
         }
@@ -103,13 +103,13 @@ contract SMv3SessionValidationModule is ISessionValidationModule {
         );
 
         {
-            (address smv3EngineAddress, uint256 callValue,) = abi.decode(
+            (address destinationContract, uint256 callValue,) = abi.decode(
                 _op.callData[4:], // skip selector
                 (address, uint256, bytes)
             );
 
             /// @dev ensure destinationContract is the smv3Engine
-            if (smv3EngineAddress != smv3Engine) {
+            if (destinationContract != smv3Engine) {
                 revert InvalidDestinationContract();
             }
 
@@ -146,9 +146,9 @@ contract SMv3SessionValidationModule is ISessionValidationModule {
             bytes4 funcSelector = bytes4(data[:4]);
             if (
                 funcSelector != smv3ModifyCollateralSelector
-                    || funcSelector != smv3CommitOrderSelector
-                    || funcSelector != smv3InvalidateUnorderedNoncesSelector
-                    || funcSelector != smv3FulfillOracleQuerySelector
+                    && funcSelector != smv3CommitOrderSelector
+                    && funcSelector != smv3InvalidateUnorderedNoncesSelector
+                    && funcSelector != smv3FulfillOracleQuerySelector
             ) {
                 revert InvalidSMv3Selector();
             }
