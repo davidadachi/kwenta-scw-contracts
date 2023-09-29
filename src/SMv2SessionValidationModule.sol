@@ -46,7 +46,7 @@ contract SMv2SessionValidationModule is ISessionValidationModule {
         }
 
         /// @dev ensure the function selector is the `SmartAccount.execute` selector
-        if (bytes4(_funcCallData[:4]) != smv2ExecuteSelector) {
+        if (bytes4(_funcCallData[0:4]) != smv2ExecuteSelector) {
             revert InvalidSMv2Selector();
         }
 
@@ -125,7 +125,7 @@ contract SMv2SessionValidationModule is ISessionValidationModule {
         }
 
         /// @dev ensure the function selector is the smv2ExecuteSelector selector
-        if (bytes4(data[:4]) != smv2ExecuteSelector) {
+        if (bytes4(data[0:4]) != smv2ExecuteSelector) {
             revert InvalidSMv2Selector();
         }
 
