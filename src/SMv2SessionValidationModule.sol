@@ -84,7 +84,7 @@ contract SMv2SessionValidationModule is ISessionValidationModule {
         /// @dev ensure function selector is `IAccount.execute`
         if (
             bytes4(_op.callData[0:4]) != EXECUTE_SELECTOR
-                || bytes4(_op.callData[0:4]) != EXECUTE_OPTIMIZED_SELECTOR
+                && bytes4(_op.callData[0:4]) != EXECUTE_OPTIMIZED_SELECTOR
         ) {
             revert InvalidSelector();
         }
@@ -97,13 +97,13 @@ contract SMv2SessionValidationModule is ISessionValidationModule {
 
         {
             // we expect _op.callData to be `SmartAccount.execute(to, value, calldata)` calldata
-            (address smv2ProxyAccountAddress, uint256 callValue,) = abi.decode(
+            (address destinationContract, uint256 callValue,) = abi.decode(
                 _op.callData[4:], // skip selector
                 (address, uint256, bytes)
             );
 
             /// @dev ensure destinationContract is the SMv2ProxyAccount
-            if (smv2ProxyAccountAddress != smv2ProxyAccount) {
+            if (destinationContract != smv2ProxyAccount) {
                 revert InvalidDestinationContract();
             }
 
