@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.18;
 
+import {ECDSA} from "src/openzeppelin/ECDSA.sol";
+import {IAccount} from "src/kwenta/smv2/IAccount.sol";
 import {
     ISessionValidationModule,
     UserOperation
 } from "src/biconomy/interfaces/ISessionValidationModule.sol";
-import {ECDSA} from "src/openzeppelin/ECDSA.sol";
 
 /**
- * @title Kwenta Smart Margin v2 Session Validation Module for Biconomy Smart Accounts.
- * @dev Validates userOps for `Account.execute()` using a session key signature.
+ * @title Kwenta Smart Margin v2 Session Validation Module for Biconomy Smart Accounts
  * @author Fil Makarov - <filipp.makarov@biconomy.io>
  * @author JaredBorders (jaredborders@pm.me)
  */
@@ -33,20 +33,17 @@ contract SMv2SessionValidationModule is ISessionValidationModule {
         bytes calldata _funcCallData,
         bytes calldata _sessionKeyData,
         bytes calldata /*_callSpecificData*/
-    ) external virtual override returns (address) {
-        (
-            address sessionKey,
-            address smv2ProxyAccount,
-            bytes4 smv2ExecuteSelector
-        ) = abi.decode(_sessionKeyData, (address, address, bytes4));
+    ) external pure override returns (address) {
+        (address sessionKey, address smv2ProxyAccount) =
+            abi.decode(_sessionKeyData, (address, address));
 
         /// @dev ensure destinationContract is the SMv2ProxyAccount
         if (destinationContract != smv2ProxyAccount) {
             revert InvalidDestinationContract();
         }
 
-        /// @dev ensure the function selector is the `SmartAccount.execute` selector
-        if (bytes4(_funcCallData[0:4]) != smv2ExecuteSelector) {
+        /// @dev ensure the function selector is the `IAccount.execute` selector
+        if (bytes4(_funcCallData[0:4]) != IAccount.execute.selector) {
             revert InvalidSMv2Selector();
         }
 
@@ -54,13 +51,6 @@ contract SMv2SessionValidationModule is ISessionValidationModule {
         if (callValue != 0) {
             revert InvalidCallValue();
         }
-
-        // (IAccount.Command[] memory _commands, bytes[] memory _inputs) = abi.decode(
-        //     _funcCallData[4:],
-        //     (IAccount.Command[], bytes[])
-        // );
-
-        /// @custom:add-param-validation-here-if-needed
 
         return sessionKey;
     }
@@ -89,28 +79,22 @@ contract SMv2SessionValidationModule is ISessionValidationModule {
             revert InvalidSelector();
         }
 
-        (
-            address sessionKey,
-            address smv2ProxyAccount,
-            bytes4 smv2ExecuteSelector
-        ) = abi.decode(_sessionKeyData, (address, address, bytes4));
+        (address sessionKey, address smv2ProxyAccount) =
+            abi.decode(_sessionKeyData, (address, address));
 
-        {
-            // we expect _op.callData to be `SmartAccount.execute(to, value, calldata)` calldata
-            (address destinationContract, uint256 callValue,) = abi.decode(
-                _op.callData[4:], // skip selector
-                (address, uint256, bytes)
-            );
+        (address destinationContract, uint256 callValue,) = abi.decode(
+            _op.callData[4:], // skip selector; already checked
+            (address, uint256, bytes)
+        );
 
-            /// @dev ensure destinationContract is the SMv2ProxyAccount
-            if (destinationContract != smv2ProxyAccount) {
-                revert InvalidDestinationContract();
-            }
+        /// @dev ensure destinationContract is the SMv2ProxyAccount
+        if (destinationContract != smv2ProxyAccount) {
+            revert InvalidDestinationContract();
+        }
 
-            /// @dev ensure call value is zero
-            if (callValue != 0) {
-                revert InvalidCallValue();
-            }
+        /// @dev ensure call value is zero
+        if (callValue != 0) {
+            revert InvalidCallValue();
         }
 
         // working with userOp.callData
@@ -124,8 +108,8 @@ contract SMv2SessionValidationModule is ISessionValidationModule {
             data = _op.callData[4 + offset + 32:4 + offset + 32 + length];
         }
 
-        /// @dev ensure the function selector is the smv2ExecuteSelector selector
-        if (bytes4(data[0:4]) != smv2ExecuteSelector) {
+        /// @dev ensure the function selector is `IAccount.execute`
+        if (bytes4(data[0:4]) != IAccount.execute.selector) {
             revert InvalidSMv2Selector();
         }
 
