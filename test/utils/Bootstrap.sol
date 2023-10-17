@@ -14,6 +14,9 @@ import {Test} from "lib/forge-std/src/Test.sol";
 contract Bootstrap is Test {
     using console2 for *;
 
+    uint256 public secp256k1_curve_order =
+        115_792_089_237_316_195_423_570_985_008_687_907_852_837_564_279_074_904_382_605_163_141_518_161_494_337;
+
     SMv2SessionValidationModule public smv2SessionValidationModule;
     SMv3SessionValidationModule public smv3SessionValidationModule;
 
