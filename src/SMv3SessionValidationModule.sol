@@ -1,20 +1,16 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.18;
 
+import {ECDSA} from "src/openzeppelin/ECDSA.sol";
+import {IEngine} from "src/kwenta/smv3/IEngine.sol";
+import {IERC7412} from "src/kwenta/smv3/IERC7412.sol";
 import {
     ISessionValidationModule,
     UserOperation
 } from "src/biconomy/interfaces/ISessionValidationModule.sol";
-import {ECDSA} from "src/openzeppelin/ECDSA.sol";
 
 /**
- * @title Kwenta Smart Margin v3 Session Validation Module for Biconomy Smart Accounts.
- * @dev Validates userOps for
- *      `IEngine.modifyCollateral()`
- *      `IEngine.commitOrder()`
- *      `IEngine.invalidateUnorderedNonces()`
- *      `IERC7412.fulfillOracleQuery()`
- * using a session key signature.
+ * @title Kwenta Smart Margin v3 Session Validation Module for Biconomy Smart Accounts
  * @author Fil Makarov - <filipp.makarov@biconomy.io>
  * @author JaredBorders (jaredborders@pm.me)
  */
@@ -38,36 +34,34 @@ contract SMv3SessionValidationModule is ISessionValidationModule {
         bytes calldata _funcCallData,
         bytes calldata _sessionKeyData,
         bytes calldata /*_callSpecificData*/
-    ) external virtual override returns (address) {
-        (
-            address sessionKey,
-            address smv3Engine,
-            bytes4 smv3ModifyCollateralSelector,
-            bytes4 smv3CommitOrderSelector,
-            bytes4 smv3InvalidateUnorderedNoncesSelector,
-            bytes4 smv3FulfillOracleQuerySelector
-        ) = abi.decode(
-            _sessionKeyData, (address, address, bytes4, bytes4, bytes4, bytes4)
-        );
+    ) external pure override returns (address) {
+        (address sessionKey, address smv3Engine) =
+            abi.decode(_sessionKeyData, (address, address));
 
         /// @dev ensure destinationContract is the smv3Engine
         if (destinationContract != smv3Engine) {
             revert InvalidDestinationContract();
         }
 
-        /// @dev ensure the function selector is the a valid selector
+        /// @dev ensure the function selector is the a valid IEngine selector
         bytes4 funcSelector = bytes4(_funcCallData[0:4]);
         if (
-            funcSelector != smv3ModifyCollateralSelector
-                && funcSelector != smv3CommitOrderSelector
-                && funcSelector != smv3InvalidateUnorderedNoncesSelector
-                && funcSelector != smv3FulfillOracleQuerySelector
+            funcSelector != IEngine.modifyCollateral.selector
+                && funcSelector != IEngine.commitOrder.selector
+                && funcSelector != IEngine.invalidateUnorderedNonces.selector
+                && funcSelector != IERC7412.fulfillOracleQuery.selector
+                && funcSelector != IEngine.depositEth.selector
+                && funcSelector != IEngine.withdrawEth.selector
         ) {
             revert InvalidSMv3Selector();
         }
 
-        /// @dev ensure call value is zero
-        if (callValue != 0) {
+        /// @dev ensure call value is zero unless calling IEngine.depositEth
+        if (funcSelector == IEngine.depositEth.selector) {
+            if (callValue == 0) {
+                revert InvalidCallValue();
+            }
+        } else if (callValue != 0) {
             revert InvalidCallValue();
         }
 
@@ -98,25 +92,17 @@ contract SMv3SessionValidationModule is ISessionValidationModule {
             revert InvalidSelector();
         }
 
-        (address sessionKey, address smv3Engine,,,,) = abi.decode(
-            _sessionKeyData, (address, address, bytes4, bytes4, bytes4, bytes4)
+        (address sessionKey, address smv3Engine) =
+            abi.decode(_sessionKeyData, (address, address));
+
+        (address destinationContract, uint256 callValue,) = abi.decode(
+            _op.callData[4:], // skip selector; already checked
+            (address, uint256, bytes)
         );
 
-        {
-            (address destinationContract, uint256 callValue,) = abi.decode(
-                _op.callData[4:], // skip selector
-                (address, uint256, bytes)
-            );
-
-            /// @dev ensure destinationContract is the smv3Engine
-            if (destinationContract != smv3Engine) {
-                revert InvalidDestinationContract();
-            }
-
-            /// @dev ensure call value is zero
-            if (callValue != 0) {
-                revert InvalidCallValue();
-            }
+        /// @dev ensure destinationContract is the smv3Engine
+        if (destinationContract != smv3Engine) {
+            revert InvalidDestinationContract();
         }
 
         // working with userOp.callData
@@ -129,29 +115,26 @@ contract SMv3SessionValidationModule is ISessionValidationModule {
             data = _op.callData[4 + offset + 32:4 + offset + 32 + length];
         }
 
-        {
-            (
-                ,
-                ,
-                bytes4 smv3ModifyCollateralSelector,
-                bytes4 smv3CommitOrderSelector,
-                bytes4 smv3InvalidateUnorderedNoncesSelector,
-                bytes4 smv3FulfillOracleQuerySelector
-            ) = abi.decode(
-                _sessionKeyData,
-                (address, address, bytes4, bytes4, bytes4, bytes4)
-            );
+        /// @dev ensure the function selector is the a valid IEngine selector
+        bytes4 funcSelector = bytes4(data[0:4]);
+        if (
+            funcSelector != IEngine.modifyCollateral.selector
+                && funcSelector != IEngine.commitOrder.selector
+                && funcSelector != IEngine.invalidateUnorderedNonces.selector
+                && funcSelector != IERC7412.fulfillOracleQuery.selector
+                && funcSelector != IEngine.depositEth.selector
+                && funcSelector != IEngine.withdrawEth.selector
+        ) {
+            revert InvalidSMv3Selector();
+        }
 
-            /// @dev ensure the function selector is the a valid selector
-            bytes4 funcSelector = bytes4(data[0:4]);
-            if (
-                funcSelector != smv3ModifyCollateralSelector
-                    && funcSelector != smv3CommitOrderSelector
-                    && funcSelector != smv3InvalidateUnorderedNoncesSelector
-                    && funcSelector != smv3FulfillOracleQuerySelector
-            ) {
-                revert InvalidSMv3Selector();
+        /// @dev ensure call value is zero unless calling IEngine.depositEth
+        if (funcSelector == IEngine.depositEth.selector) {
+            if (callValue == 0) {
+                revert InvalidCallValue();
             }
+        } else if (callValue != 0) {
+            revert InvalidCallValue();
         }
 
         /// @dev this method of signature validation is out-of-date
