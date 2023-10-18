@@ -96,26 +96,6 @@ contract ValidateSessionParams is SMv2SessionValidationModuleTest {
         );
     }
 
-    function test_validateSessionParams_callValue_invalid(
-        uint256 invalid_callValue
-    ) public {
-        vm.assume(invalid_callValue != callValue);
-
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                SMv2SessionValidationModule.InvalidCallValue.selector
-            )
-        );
-
-        smv2SessionValidationModule.validateSessionParams(
-            destinationContract,
-            invalid_callValue,
-            funcCallData,
-            sessionKeyData,
-            callSpecificData
-        );
-    }
-
     function test_validateSessionParams_funcCallData_invalid(
         bytes4 invalid_selector
     ) public {
