@@ -23,13 +23,12 @@ contract SMv2SessionValidationModule is ISessionValidationModule {
      * @dev validates that the call (destinationContract, callValue, funcCallData)
      * complies with the Session Key permissions represented by sessionKeyData
      * @param destinationContract address of the contract to be called
-     * @param callValue value to be sent with the call
      * @param _funcCallData the data for the call. is parsed inside the SVM
      * @param _sessionKeyData SessionKey data, that describes sessionKey permissions
      */
     function validateSessionParams(
         address destinationContract,
-        uint256 callValue,
+        uint256, /*callValue*/
         bytes calldata _funcCallData,
         bytes calldata _sessionKeyData,
         bytes calldata /*_callSpecificData*/
@@ -45,11 +44,6 @@ contract SMv2SessionValidationModule is ISessionValidationModule {
         /// @dev ensure the function selector is the `IAccount.execute` selector
         if (bytes4(_funcCallData[0:4]) != IAccount.execute.selector) {
             revert InvalidSMv2Selector();
-        }
-
-        /// @dev ensure call value is zero
-        if (callValue != 0) {
-            revert InvalidCallValue();
         }
 
         return sessionKey;
