@@ -14,12 +14,9 @@ import {IAccount} from "src/kwenta/smv2/IAccount.sol";
 contract SMv2SessionValidationModuleTest is Bootstrap {
     address signer;
     uint256 signerPrivateKey;
-    address bad_signer;
-    uint256 bad_signerPrivateKey;
 
     address sessionKey;
     address smv2ProxyAccount;
-    bytes4 smv2ExecuteSelector;
     address destinationContract;
     uint256 callValue;
     bytes funcCallData;
@@ -43,20 +40,16 @@ contract SMv2SessionValidationModuleTest is Bootstrap {
         // signers
         signerPrivateKey = 0x12341234;
         signer = vm.addr(signerPrivateKey);
-        bad_signerPrivateKey = 0x12341235;
-        bad_signer = vm.addr(bad_signerPrivateKey);
 
         // session key data
         sessionKey = signer;
         smv2ProxyAccount = address(0x2);
-        smv2ExecuteSelector = IAccount.execute.selector;
 
         // validateSessionParams params
         destinationContract = smv2ProxyAccount;
         callValue = 0;
-        funcCallData = abi.encode(smv2ExecuteSelector, bytes32(""));
-        sessionKeyData =
-            abi.encode(sessionKey, smv2ProxyAccount, smv2ExecuteSelector);
+        funcCallData = abi.encode(IAccount.execute.selector, bytes32(""));
+        sessionKeyData = abi.encode(sessionKey, destinationContract);
         callSpecificData = "";
 
         // validateSessionUserOp params
@@ -83,8 +76,10 @@ contract ValidateSessionParams is SMv2SessionValidationModuleTest {
         assertEq(sessionKey, retSessionKey);
     }
 
-    function test_validateSessionParams_destinationContract_invalid() public {
-        destinationContract = address(0);
+    function test_validateSessionParams_destinationContract_invalid(
+        address invalid_destinationContract
+    ) public {
+        vm.assume(invalid_destinationContract != destinationContract);
 
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -93,7 +88,7 @@ contract ValidateSessionParams is SMv2SessionValidationModuleTest {
         );
 
         smv2SessionValidationModule.validateSessionParams(
-            destinationContract,
+            invalid_destinationContract,
             callValue,
             funcCallData,
             sessionKeyData,
@@ -101,26 +96,13 @@ contract ValidateSessionParams is SMv2SessionValidationModuleTest {
         );
     }
 
-    function test_validateSessionParams_callValue_invalid() public {
-        callValue = 1;
+    function test_validateSessionParams_funcCallData_invalid(
+        bytes4 invalid_selector
+    ) public {
+        vm.assume(invalid_selector != IAccount.execute.selector);
 
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                SMv2SessionValidationModule.InvalidCallValue.selector
-            )
-        );
-
-        smv2SessionValidationModule.validateSessionParams(
-            destinationContract,
-            callValue,
-            funcCallData,
-            sessionKeyData,
-            callSpecificData
-        );
-    }
-
-    function test_validateSessionParams_funcCallData_invalid() public {
-        funcCallData = abi.encode(bytes4(""), bytes4(""));
+        bytes memory invalid_funcCallData =
+            abi.encode(invalid_selector, bytes32(""));
 
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -131,31 +113,36 @@ contract ValidateSessionParams is SMv2SessionValidationModuleTest {
         smv2SessionValidationModule.validateSessionParams(
             destinationContract,
             callValue,
-            funcCallData,
+            invalid_funcCallData,
             sessionKeyData,
             callSpecificData
         );
     }
 
-    function test_validateSessionParams_sessionKeyData_invalid() public {
-        address invalidSessionKey = address(0);
-        sessionKeyData =
-            abi.encode(invalidSessionKey, smv2ProxyAccount, smv2ExecuteSelector);
+    function test_validateSessionParams_sessionKeyData_invalid(
+        address invalid_sessionKey,
+        address invalid_destinationContract
+    ) public {
+        vm.assume(invalid_sessionKey != sessionKey);
+
+        bytes memory invalid_sessionKeyData =
+            abi.encode(invalid_sessionKey, destinationContract);
 
         address retSessionKey = smv2SessionValidationModule
             .validateSessionParams(
             destinationContract,
             callValue,
             funcCallData,
-            sessionKeyData,
+            invalid_sessionKeyData,
             callSpecificData
         );
 
         assertFalse(retSessionKey == sessionKey);
 
-        address invalidSmv2ProxyAccount = address(0);
-        sessionKeyData =
-            abi.encode(sessionKey, invalidSmv2ProxyAccount, smv2ExecuteSelector);
+        vm.assume(invalid_destinationContract != destinationContract);
+
+        invalid_sessionKeyData =
+            abi.encode(sessionKey, invalid_destinationContract);
 
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -167,25 +154,7 @@ contract ValidateSessionParams is SMv2SessionValidationModuleTest {
             destinationContract,
             callValue,
             funcCallData,
-            sessionKeyData,
-            callSpecificData
-        );
-
-        bytes4 invalidSmv2ExecuteSelector = bytes4("");
-        sessionKeyData =
-            abi.encode(sessionKey, smv2ProxyAccount, invalidSmv2ExecuteSelector);
-
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                SMv2SessionValidationModule.InvalidSMv2Selector.selector
-            )
-        );
-
-        smv2SessionValidationModule.validateSessionParams(
-            destinationContract,
-            callValue,
-            funcCallData,
-            sessionKeyData,
+            invalid_sessionKeyData,
             callSpecificData
         );
     }
@@ -198,28 +167,18 @@ contract ValidateSessionUserOp is SMv2SessionValidationModuleTest {
         );
 
         assertTrue(isValid);
-
-        op.callData = abi.encodeWithSelector(
-            EXECUTE_OPTIMIZED_SELECTOR,
-            destinationContract,
-            callValue,
-            funcCallData
-        );
-        userOpHash = userOpSignature.hashUserOperation(op);
-        sessionKeySignature =
-            userOpSignature.getUserOperationSignature(op, signerPrivateKey);
-
-        isValid = smv2SessionValidationModule.validateSessionUserOp(
-            op, userOpHash, sessionKeyData, sessionKeySignature
-        );
-
-        assertTrue(isValid);
     }
 
-    function test_validateSessionUserOp_op_callData_invalid() public {
-        bytes4 invalidSelector = bytes4("");
+    function test_validateSessionUserOp_op_callData_invalid(
+        bytes4 invalid_selector,
+        address invalid_destinationContract,
+        uint256 invalid_callValue
+    ) public {
+        vm.assume(invalid_selector != EXECUTE_SELECTOR);
+        vm.assume(invalid_selector != EXECUTE_OPTIMIZED_SELECTOR);
+
         op.callData = abi.encodeWithSelector(
-            invalidSelector, smv2ProxyAccount, callValue, funcCallData
+            invalid_selector, destinationContract, callValue, funcCallData
         );
 
         vm.expectRevert(
@@ -232,9 +191,13 @@ contract ValidateSessionUserOp is SMv2SessionValidationModuleTest {
             op, userOpHash, sessionKeyData, sessionKeySignature
         );
 
-        destinationContract = address(0);
+        vm.assume(invalid_destinationContract != destinationContract);
+
         op.callData = abi.encodeWithSelector(
-            EXECUTE_SELECTOR, destinationContract, callValue, funcCallData
+            EXECUTE_SELECTOR,
+            invalid_destinationContract,
+            callValue,
+            funcCallData
         );
 
         vm.expectRevert(
@@ -247,10 +210,13 @@ contract ValidateSessionUserOp is SMv2SessionValidationModuleTest {
             op, userOpHash, sessionKeyData, sessionKeySignature
         );
 
-        callValue = 1;
-        destinationContract = smv2ProxyAccount;
+        vm.assume(invalid_callValue != callValue);
+
         op.callData = abi.encodeWithSelector(
-            EXECUTE_SELECTOR, destinationContract, callValue, funcCallData
+            EXECUTE_SELECTOR,
+            destinationContract,
+            invalid_callValue,
+            funcCallData
         );
 
         vm.expectRevert(
@@ -263,10 +229,16 @@ contract ValidateSessionUserOp is SMv2SessionValidationModuleTest {
             op, userOpHash, sessionKeyData, sessionKeySignature
         );
 
-        callValue = 0;
-        funcCallData = abi.encode(bytes4(""), bytes4(""));
+        vm.assume(invalid_selector != IAccount.execute.selector);
+
+        bytes memory invalid_funcCallData =
+            abi.encode(invalid_selector, bytes32(""));
+
         op.callData = abi.encodeWithSelector(
-            EXECUTE_SELECTOR, destinationContract, callValue, funcCallData
+            EXECUTE_SELECTOR,
+            destinationContract,
+            callValue,
+            invalid_funcCallData
         );
 
         vm.expectRevert(
@@ -280,29 +252,36 @@ contract ValidateSessionUserOp is SMv2SessionValidationModuleTest {
         );
     }
 
-    function test_validateSessionUserOp_userOpHash_invalid() public {
-        bytes32 invalidUserOpHash = bytes32("");
+    function test_validateSessionUserOp_userOpHash_invalid(
+        bytes32 invalid_userOpHash
+    ) public {
+        vm.assume(invalid_userOpHash != userOpHash);
+
         bool isValid = smv2SessionValidationModule.validateSessionUserOp(
-            op, invalidUserOpHash, sessionKeyData, sessionKeySignature
+            op, invalid_userOpHash, sessionKeyData, sessionKeySignature
         );
 
         assertFalse(isValid);
     }
 
-    function test_validateSessionUserOp_sessionKeyData_invalid() public {
-        address invalidSessionKey = address(0);
-        sessionKeyData =
-            abi.encode(invalidSessionKey, smv2ProxyAccount, smv2ExecuteSelector);
+    function test_validateSessionUserOp_sessionKeyData_invalid(
+        address invalid_sessionKey,
+        address invalid_destinationContract
+    ) public {
+        vm.assume(invalid_sessionKey != sessionKey);
+
+        bytes memory invalid_sessionKeyData =
+            abi.encode(invalid_sessionKey, destinationContract);
 
         bool isValid = smv2SessionValidationModule.validateSessionUserOp(
-            op, userOpHash, sessionKeyData, sessionKeySignature
+            op, userOpHash, invalid_sessionKeyData, sessionKeySignature
         );
 
         assertFalse(isValid);
 
-        address invalidSmv2ProxyAccount = address(0);
-        sessionKeyData =
-            abi.encode(sessionKey, invalidSmv2ProxyAccount, smv2ExecuteSelector);
+        vm.assume(invalid_destinationContract != destinationContract);
+
+        sessionKeyData = abi.encode(sessionKey, invalid_destinationContract);
 
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -313,25 +292,21 @@ contract ValidateSessionUserOp is SMv2SessionValidationModuleTest {
         smv2SessionValidationModule.validateSessionUserOp(
             op, userOpHash, sessionKeyData, sessionKeySignature
         );
-
-        bytes4 invalidSmv2ExecuteSelector = bytes4("");
-        sessionKeyData =
-            abi.encode(sessionKey, smv2ProxyAccount, invalidSmv2ExecuteSelector);
-
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                SMv2SessionValidationModule.InvalidSMv2Selector.selector
-            )
-        );
-
-        smv2SessionValidationModule.validateSessionUserOp(
-            op, userOpHash, sessionKeyData, sessionKeySignature
-        );
     }
 
-    function test_validateSessionUserOp_sessionKeySignature_invalid() public {
+    function test_validateSessionUserOp_sessionKeySignature_invalid(
+        uint256 invalid_privateKey
+    ) public {
+        // restrictions enforced by foundry
+        vm.assume(invalid_privateKey != 0);
+        vm.assume(invalid_privateKey < secp256k1_curve_order);
+
+        // test specific
+        vm.assume(invalid_privateKey != signerPrivateKey);
+
         bytes memory invalidSessionKeySignature =
-            userOpSignature.getUserOperationSignature(op, bad_signerPrivateKey);
+            userOpSignature.getUserOperationSignature(op, invalid_privateKey);
+
         bool isValid = smv2SessionValidationModule.validateSessionUserOp(
             op, userOpHash, sessionKeyData, invalidSessionKeySignature
         );
