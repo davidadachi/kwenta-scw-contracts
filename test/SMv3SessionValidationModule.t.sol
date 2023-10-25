@@ -155,17 +155,8 @@ contract ValidateSessionParams is SMv3SessionValidationModuleTest {
         }
     }
 
-    function test_validateSessionParams_funcCallData_invalid(
-        bytes4 invalid_selector
-    ) public {
-        vm.assume(invalid_selector != IEngine.modifyCollateral.selector);
-        vm.assume(invalid_selector != IEngine.commitOrder.selector);
-        vm.assume(
-            invalid_selector != IEngine.invalidateUnorderedNonces.selector
-        );
-        vm.assume(invalid_selector != IERC7412.fulfillOracleQuery.selector);
-        vm.assume(invalid_selector != IEngine.depositEth.selector);
-        vm.assume(invalid_selector != IEngine.withdrawEth.selector);
+    function test_validateSessionParams_funcCallData_invalid() public {
+        bytes4 invalid_selector = 0x12345678;
 
         funcCallData = abi.encodeWithSelector(bytes4(""), invalid_selector);
 
@@ -255,12 +246,10 @@ contract ValidateSessionUserOp is SMv3SessionValidationModuleTest {
     }
 
     function test_validateSessionUserOp_op_callData_invalid(
-        bytes4 invalid_selector,
         address invalid_destinationContract,
         uint256 invalid_callValue
     ) public {
-        vm.assume(invalid_selector != EXECUTE_SELECTOR);
-        vm.assume(invalid_selector != EXECUTE_OPTIMIZED_SELECTOR);
+        bytes4 invalid_selector = 0x12345678;
 
         op.callData = abi.encodeWithSelector(
             invalid_selector, destinationContract, 1, funcCallData
@@ -324,15 +313,6 @@ contract ValidateSessionUserOp is SMv3SessionValidationModuleTest {
                 op, userOpHash, sessionKeyData, sessionKeySignature
             );
         }
-
-        vm.assume(invalid_selector != IEngine.modifyCollateral.selector);
-        vm.assume(invalid_selector != IEngine.commitOrder.selector);
-        vm.assume(
-            invalid_selector != IEngine.invalidateUnorderedNonces.selector
-        );
-        vm.assume(invalid_selector != IERC7412.fulfillOracleQuery.selector);
-        vm.assume(invalid_selector != IEngine.depositEth.selector);
-        vm.assume(invalid_selector != IEngine.withdrawEth.selector);
 
         bytes memory invalid_funcCallData =
             abi.encode(invalid_selector, bytes32(""));

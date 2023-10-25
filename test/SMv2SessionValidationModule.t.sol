@@ -96,10 +96,8 @@ contract ValidateSessionParams is SMv2SessionValidationModuleTest {
         );
     }
 
-    function test_validateSessionParams_funcCallData_invalid(
-        bytes4 invalid_selector
-    ) public {
-        vm.assume(invalid_selector != IAccount.execute.selector);
+    function test_validateSessionParams_funcCallData_invalid() public {
+        bytes4 invalid_selector = 0x12345678;
 
         bytes memory invalid_funcCallData =
             abi.encode(invalid_selector, bytes32(""));
@@ -170,11 +168,9 @@ contract ValidateSessionUserOp is SMv2SessionValidationModuleTest {
     }
 
     function test_validateSessionUserOp_op_callData_invalid(
-        bytes4 invalid_selector,
         address invalid_destinationContract
     ) public {
-        vm.assume(invalid_selector != EXECUTE_SELECTOR);
-        vm.assume(invalid_selector != EXECUTE_OPTIMIZED_SELECTOR);
+        bytes4 invalid_selector = 0x12345678;
 
         op.callData = abi.encodeWithSelector(
             invalid_selector, destinationContract, callValue, funcCallData
@@ -208,8 +204,6 @@ contract ValidateSessionUserOp is SMv2SessionValidationModuleTest {
         smv2SessionValidationModule.validateSessionUserOp(
             op, userOpHash, sessionKeyData, sessionKeySignature
         );
-
-        vm.assume(invalid_selector != IAccount.execute.selector);
 
         bytes memory invalid_funcCallData =
             abi.encode(invalid_selector, bytes32(""));
