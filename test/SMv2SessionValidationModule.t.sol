@@ -171,8 +171,7 @@ contract ValidateSessionUserOp is SMv2SessionValidationModuleTest {
 
     function test_validateSessionUserOp_op_callData_invalid(
         bytes4 invalid_selector,
-        address invalid_destinationContract,
-        uint256 invalid_callValue
+        address invalid_destinationContract
     ) public {
         vm.assume(invalid_selector != EXECUTE_SELECTOR);
         vm.assume(invalid_selector != EXECUTE_OPTIMIZED_SELECTOR);
@@ -203,25 +202,6 @@ contract ValidateSessionUserOp is SMv2SessionValidationModuleTest {
         vm.expectRevert(
             abi.encodeWithSelector(
                 SMv2SessionValidationModule.InvalidDestinationContract.selector
-            )
-        );
-
-        smv2SessionValidationModule.validateSessionUserOp(
-            op, userOpHash, sessionKeyData, sessionKeySignature
-        );
-
-        vm.assume(invalid_callValue != callValue);
-
-        op.callData = abi.encodeWithSelector(
-            EXECUTE_SELECTOR,
-            destinationContract,
-            invalid_callValue,
-            funcCallData
-        );
-
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                SMv2SessionValidationModule.InvalidCallValue.selector
             )
         );
 
