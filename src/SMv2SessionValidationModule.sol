@@ -17,7 +17,6 @@ contract SMv2SessionValidationModule is ISessionValidationModule {
     error InvalidSelector();
     error InvalidSMv2Selector();
     error InvalidDestinationContract();
-    error InvalidCallValue();
 
     /**
      * @dev validates that the call (destinationContract, callValue, funcCallData)
