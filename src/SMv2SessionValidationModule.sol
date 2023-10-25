@@ -76,7 +76,7 @@ contract SMv2SessionValidationModule is ISessionValidationModule {
         (address sessionKey, address smv2ProxyAccount) =
             abi.decode(_sessionKeyData, (address, address));
 
-        (address destinationContract, uint256 callValue,) = abi.decode(
+        (address destinationContract,,) = abi.decode(
             _op.callData[4:], // skip selector; already checked
             (address, uint256, bytes)
         );
@@ -84,11 +84,6 @@ contract SMv2SessionValidationModule is ISessionValidationModule {
         /// @dev ensure destinationContract is the SMv2ProxyAccount
         if (destinationContract != smv2ProxyAccount) {
             revert InvalidDestinationContract();
-        }
-
-        /// @dev ensure call value is zero
-        if (callValue != 0) {
-            revert InvalidCallValue();
         }
 
         // working with userOp.callData
