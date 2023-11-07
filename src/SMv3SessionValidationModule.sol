@@ -84,7 +84,10 @@ contract SMv3SessionValidationModule is ISessionValidationModule {
         bytes calldata _sessionKeyData,
         bytes calldata _sessionKeySignature
     ) external pure override returns (bool) {
-        /// @dev ensure function selector is `IAccount.execute`
+        /// @dev ensure function selector either
+        /// `execute(address,uint256,bytes)`
+        /// or
+        /// `execute_ncC(address,uint256,bytes)`
         if (
             bytes4(_op.callData[0:4]) != EXECUTE_SELECTOR
                 && bytes4(_op.callData[0:4]) != EXECUTE_OPTIMIZED_SELECTOR
