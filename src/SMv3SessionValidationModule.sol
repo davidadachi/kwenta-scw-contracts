@@ -3,7 +3,7 @@ pragma solidity 0.8.18;
 
 import {ECDSA} from "src/openzeppelin/ECDSA.sol";
 import {IEngine} from "src/kwenta/smv3/IEngine.sol";
-import {IERC7412} from "src/kwenta/smv3/IERC7412.sol";
+import {EIP7412} from "src/kwenta/smv3/EIP7412.sol";
 import {
     ISessionValidationModule,
     UserOperation
@@ -49,7 +49,7 @@ contract SMv3SessionValidationModule is ISessionValidationModule {
             funcSelector != IEngine.modifyCollateral.selector
                 && funcSelector != IEngine.commitOrder.selector
                 && funcSelector != IEngine.invalidateUnorderedNonces.selector
-                && funcSelector != IERC7412.fulfillOracleQuery.selector
+                && funcSelector != EIP7412.fulfillOracleQuery.selector
                 && funcSelector != IEngine.depositEth.selector
                 && funcSelector != IEngine.withdrawEth.selector
         ) {
@@ -121,7 +121,7 @@ contract SMv3SessionValidationModule is ISessionValidationModule {
             funcSelector != IEngine.modifyCollateral.selector
                 && funcSelector != IEngine.commitOrder.selector
                 && funcSelector != IEngine.invalidateUnorderedNonces.selector
-                && funcSelector != IERC7412.fulfillOracleQuery.selector
+                && funcSelector != EIP7412.fulfillOracleQuery.selector
                 && funcSelector != IEngine.depositEth.selector
                 && funcSelector != IEngine.withdrawEth.selector
         ) {
