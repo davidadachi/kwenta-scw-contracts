@@ -10,7 +10,7 @@ import {
     UserOperationLib
 } from "test/utils/UserOperationSignature.sol";
 import {IEngine} from "src/kwenta/smv3/IEngine.sol";
-import {IERC7412} from "src/kwenta/smv3/IERC7412.sol";
+import {EIP7412} from "src/kwenta/smv3/EIP7412.sol";
 
 contract SMv3SessionValidationModuleTest is Bootstrap {
     address signer;
@@ -73,7 +73,7 @@ contract SMv3SessionValidationModuleTest is Bootstrap {
         validSelectors.push(IEngine.modifyCollateral.selector);
         validSelectors.push(IEngine.commitOrder.selector);
         validSelectors.push(IEngine.invalidateUnorderedNonces.selector);
-        validSelectors.push(IERC7412.fulfillOracleQuery.selector);
+        validSelectors.push(EIP7412.fulfillOracleQuery.selector);
         validSelectors.push(IEngine.depositEth.selector);
         validSelectors.push(IEngine.withdrawEth.selector);
     }
