@@ -4,10 +4,7 @@ pragma solidity 0.8.18;
 import {ECDSA} from "src/openzeppelin/ECDSA.sol";
 import {IEngine} from "src/kwenta/smv3/IEngine.sol";
 import {IERC7412} from "src/kwenta/smv3/IERC7412.sol";
-import {
-    ISessionValidationModule,
-    UserOperation
-} from "src/biconomy/interfaces/ISessionValidationModule.sol";
+import {ISessionValidationModule, UserOperation} from "src/biconomy/interfaces/ISessionValidationModule.sol";
 
 /**
  * @title Kwenta Smart Margin v3 Session Validation Module for Biconomy Smart Accounts
@@ -35,8 +32,10 @@ contract SMv3SessionValidationModule is ISessionValidationModule {
         bytes calldata _sessionKeyData,
         bytes calldata /*_callSpecificData*/
     ) external pure override returns (address) {
-        (address sessionKey, address smv3Engine) =
-            abi.decode(_sessionKeyData, (address, address));
+        (address sessionKey, address smv3Engine) = abi.decode(
+            _sessionKeyData,
+            (address, address)
+        );
 
         /// @dev ensure destinationContract is the smv3Engine
         if (destinationContract != smv3Engine) {
@@ -46,18 +45,22 @@ contract SMv3SessionValidationModule is ISessionValidationModule {
         /// @dev ensure the function selector is the a valid IEngine selector
         bytes4 funcSelector = bytes4(_funcCallData[0:4]);
         if (
-            funcSelector != IEngine.modifyCollateral.selector
-                && funcSelector != IEngine.commitOrder.selector
-                && funcSelector != IEngine.invalidateUnorderedNonces.selector
-                && funcSelector != IERC7412.fulfillOracleQuery.selector
-                && funcSelector != IEngine.depositEth.selector
-                && funcSelector != IEngine.withdrawEth.selector
+            funcSelector != IEngine.modifyCollateral.selector &&
+            funcSelector != IEngine.commitOrder.selector &&
+            funcSelector != IEngine.invalidateUnorderedNonces.selector &&
+            funcSelector != IERC7412.fulfillOracleQuery.selector &&
+            funcSelector != IEngine.depositEth.selector &&
+            funcSelector != IEngine.withdrawEth.selector
         ) {
             revert InvalidSMv3Selector();
         }
 
-        /// @dev ensure call value is zero unless calling IEngine.depositEth
+        /// @dev ensure call value is zero unless calling IEngine.depositEth or IERC7412.fulfillOracleQuery
         if (funcSelector == IEngine.depositEth.selector) {
+            if (callValue == 0) {
+                revert InvalidCallValue();
+            }
+        } else if (funcSelector == IERC7412.fulfillOracleQuery.selector) {
             if (callValue == 0) {
                 revert InvalidCallValue();
             }
@@ -86,16 +89,18 @@ contract SMv3SessionValidationModule is ISessionValidationModule {
     ) external pure override returns (bool) {
         /// @dev ensure function selector is `IAccount.execute`
         if (
-            bytes4(_op.callData[0:4]) != EXECUTE_SELECTOR
-                && bytes4(_op.callData[0:4]) != EXECUTE_OPTIMIZED_SELECTOR
+            bytes4(_op.callData[0:4]) != EXECUTE_SELECTOR &&
+            bytes4(_op.callData[0:4]) != EXECUTE_OPTIMIZED_SELECTOR
         ) {
             revert InvalidSelector();
         }
 
-        (address sessionKey, address smv3Engine) =
-            abi.decode(_sessionKeyData, (address, address));
+        (address sessionKey, address smv3Engine) = abi.decode(
+            _sessionKeyData,
+            (address, address)
+        );
 
-        (address destinationContract, uint256 callValue,) = abi.decode(
+        (address destinationContract, uint256 callValue, ) = abi.decode(
             _op.callData[4:], // skip selector; already checked
             (address, uint256, bytes)
         );
@@ -110,20 +115,21 @@ contract SMv3SessionValidationModule is ISessionValidationModule {
         bytes calldata data;
         {
             uint256 offset = uint256(bytes32(_op.callData[4 + 64:4 + 96]));
-            uint256 length =
-                uint256(bytes32(_op.callData[4 + offset:4 + offset + 32]));
+            uint256 length = uint256(
+                bytes32(_op.callData[4 + offset:4 + offset + 32])
+            );
             data = _op.callData[4 + offset + 32:4 + offset + 32 + length];
         }
 
         /// @dev ensure the function selector is the a valid IEngine selector
         bytes4 funcSelector = bytes4(data[0:4]);
         if (
-            funcSelector != IEngine.modifyCollateral.selector
-                && funcSelector != IEngine.commitOrder.selector
-                && funcSelector != IEngine.invalidateUnorderedNonces.selector
-                && funcSelector != IERC7412.fulfillOracleQuery.selector
-                && funcSelector != IEngine.depositEth.selector
-                && funcSelector != IEngine.withdrawEth.selector
+            funcSelector != IEngine.modifyCollateral.selector &&
+            funcSelector != IEngine.commitOrder.selector &&
+            funcSelector != IEngine.invalidateUnorderedNonces.selector &&
+            funcSelector != IERC7412.fulfillOracleQuery.selector &&
+            funcSelector != IEngine.depositEth.selector &&
+            funcSelector != IEngine.withdrawEth.selector
         ) {
             revert InvalidSMv3Selector();
         }
@@ -139,8 +145,10 @@ contract SMv3SessionValidationModule is ISessionValidationModule {
 
         /// @dev this method of signature validation is out-of-date
         /// see https://github.com/OpenZeppelin/openzeppelin-sdk/blob/7d96de7248ae2e7e81a743513ccc617a2e6bba21/packages/lib/contracts/cryptography/ECDSA.sol#L6
-        return ECDSA.recover(
-            ECDSA.toEthSignedMessageHash(_userOpHash), _sessionKeySignature
-        ) == sessionKey;
+        return
+            ECDSA.recover(
+                ECDSA.toEthSignedMessageHash(_userOpHash),
+                _sessionKeySignature
+            ) == sessionKey;
     }
 }
