@@ -85,13 +85,15 @@ contract ValidateSessionParams is SMv3SessionValidationModuleTest {
             // ensure each valid selector is accepted
             funcCallData = abi.encode(validSelectors[i], bytes32(""));
 
-            if (validSelectors[i] == IEngine.depositEth.selector) {
-                callValue = 1; // valid for depositEth
-            } else if (validSelectors[i] == EIP7412.fulfillOracleQuery.selector)
-            {
-                callValue = 1; // valid for fulfillOracleQuery
+            if (
+                validSelectors[i] == IEngine.depositEth.selector
+                    || validSelectors[i] == EIP7412.fulfillOracleQuery.selector
+            ) {
+                // ONLY non-zero call values are valid when
+                // calling depositEth() or fulfillOracleQuery()
+                callValue = 1;
             } else {
-                callValue = 0; // invalid for depositEth
+                callValue = 0;
             }
 
             address retSessionKey = smv3SessionValidationModule
