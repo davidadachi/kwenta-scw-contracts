@@ -136,11 +136,10 @@ contract SMv3SessionValidationModule is ISessionValidationModule {
         }
 
         /// @dev ensure call value is zero unless calling IEngine.depositEth or EIP7412.fulfillOracleQuery
-        if (funcSelector == IEngine.depositEth.selector) {
-            if (callValue == 0) {
-                revert InvalidCallValue();
-            }
-        } else if (funcSelector == EIP7412.fulfillOracleQuery.selector) {
+        if (
+            funcSelector == IEngine.depositEth.selector
+                || funcSelector == EIP7412.fulfillOracleQuery.selector
+        ) {
             if (callValue == 0) {
                 revert InvalidCallValue();
             }
